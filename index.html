@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cozy Toolkit</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light;--bg:#FAF8F5;--card:#fff;--ink:#4A4543;--mute:#8f8480;--lav:#E4DAF7;--pink:#F6CAD3;--mint:#D2F3DF;--peach:#FFE1CC;--honey:#F6DC9B;--line:#f1e9e6;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--bg);color:var(--ink);font-family:'Quicksand',ui-rounded,system-ui,sans-serif;min-height:100%}
+.card{background:var(--card);border-radius:1.5rem;box-shadow:0 6px 24px rgba(160,140,200,.15);padding:1.1rem}
+.tab{padding:.55rem 1rem;border-radius:999px;font-weight:700;color:var(--mute);white-space:nowrap}
+.tab.on{background:var(--lav);color:#4a3a78}
+.btn{padding:.6rem 1.1rem;border-radius:999px;font-weight:700;background:var(--pink);color:#7a3550}
+.btn.mint{background:var(--mint);color:#1f6a3a}.btn.lav{background:var(--lav);color:#4a3a78}
+.btn:disabled{opacity:.5}
+.inp{width:100%;border:2px solid var(--line);border-radius:1rem;padding:.55rem .8rem;background:var(--bg);color:var(--ink)}
+label.l{font-weight:700;font-size:.85rem;color:var(--mute);display:block;margin-bottom:.25rem}
+input[type=range]{width:100%;accent-color:#b79cf0}
+.drop{border:2px dashed #cdb8f5;border-radius:1.25rem;padding:1.2rem;text-align:center;color:var(--mute)}
+.drop.over{background:var(--lav)}
+canvas{max-width:100%;height:auto;border-radius:1rem;background:repeating-conic-gradient(#f3eefb 0 25%,#fff 0 50%) 0 0/16px 16px}
+.thumbs img{width:3rem;height:3rem;object-fit:cover;border-radius:.6rem}
+.tab.on{background:var(--pink);color:#7a3a4c}
+.btn{background:var(--pink);color:#7a3a4c}
+.btn.lav{background:var(--lav);color:#5a4690}
+.btn.mint{background:var(--mint);color:#216a45}
+.btn.peach{background:var(--peach);color:#8a4a22}
+.btn.sel{background:var(--honey);color:#6b4e12}
+.tip{position:absolute;bottom:115%;right:0;background:#4A4543;color:#fff;font-size:.75rem;font-weight:700;padding:.3rem .6rem;border-radius:.7rem;white-space:nowrap;opacity:0;transform:translateY(4px);transition:.2s;pointer-events:none;z-index:5}
+.tip.show{opacity:1;transform:none}
+.card{box-shadow:0 4px 18px rgba(200,160,160,.18)}
+</style>
+</head>
+<body>
+<div class="max-w-5xl mx-auto p-4 sm:p-6">
+  <header class="mb-4 text-center">
+    <h1 class="text-2xl sm:text-3xl font-bold">Cozy Toolkit ☁️</h1>
+    <p class="text-sm" style="color:var(--mute)">Collage proofs, watermark media, and polish your English chats. Everything stays in your browser.</p>
+  </header>
+  <nav class="flex gap-2 overflow-x-auto pb-2 justify-start sm:justify-center" id="tabs">
+    <button class="tab on" data-t="collage">Proof collage</button>
+    <button class="tab" data-t="media">Watermark media</button>
+    <button class="tab" data-t="chat">English rewriter</button>
+  </nav>
+
+  <!-- shared watermark controls template -->
+  <template id="wmtpl">
+    <div class="card space-y-3">
+      <h3 class="font-bold">Watermark</h3>
+      <div class="flex gap-2 flex-wrap">
+        <label class="flex items-center gap-1"><input type="radio" name="TYPE" value="none" checked> None</label>
+        <label class="flex items-center gap-1"><input type="radio" name="TYPE" value="text"> Text</label>
+        <label class="flex items-center gap-1"><input type="radio" name="TYPE" value="image"> Logo</label>
+      </div>
+      <div><label class="l">Watermark text</label><input class="inp" data-k="text" value="@bingbingvote"></div>
+      <div><label class="l">Logo (transparent PNG)</label><input type="file" accept="image/*" data-k="logo" class="text-sm"></div>
+      <div><label class="l">Pattern</label>
+        <select class="inp" data-k="pattern">
+          <option value="center">Single – placed by X/Y</option>
+          <option value="corner">Single – bottom right corner</option>
+          <option value="diagonal" selected>Diagonal repeating</option>
+          <option value="straight">Straight repeating</option>
+        </select></div>
+      <div><label class="l">Opacity <span data-o="opacity"></span></label><input type="range" min="5" max="100" value="35" data-k="opacity"></div>
+      <div><label class="l">Size <span data-o="size"></span></label><input type="range" min="2" max="40" value="8" data-k="size"></div>
+      <div><label class="l">Position X <span data-o="posx"></span></label><input type="range" min="0" max="100" value="50" data-k="posx"></div>
+      <div><label class="l">Position Y <span data-o="posy"></span></label><input type="range" min="0" max="100" value="50" data-k="posy"></div>
+      <div><label class="l">Spacing (repeat patterns) <span data-o="gap"></span></label><input type="range" min="50" max="250" value="100" data-k="gap"></div>
+      <div><label class="l">Text color</label><input type="color" value="#ffffff" data-k="color" class="h-9 w-16 rounded"></div>
+    </div>
+  </template>
+
+  <!-- COLLAGE -->
+  <section id="collage" class="mt-4 grid lg:grid-cols-[320px_1fr] gap-4">
+    <div class="space-y-4">
+      <div class="card space-y-3">
+        <div class="drop" id="cdrop">Drop screenshots here or <button class="underline font-bold" id="cpick">choose files</button><input type="file" id="cfiles" accept="image/*" multiple hidden></div>
+        <div class="flex flex-wrap gap-1 thumbs" id="cthumbs"></div>
+        <div><label class="l">Columns: <span id="colv">4</span></label><input type="range" id="cols" min="2" max="6" value="4"></div>
+        <div><label class="l">Max width</label><select id="cmax" class="inp"><option value="1080">1080px – chat friendly</option><option value="1600">1600px – balanced</option><option value="2400" selected>2400px – high-res</option><option value="3600">3600px – max detail</option></select></div>
+        <label class="flex items-center gap-2 font-bold text-sm"><input type="checkbox" id="ccomp"> Smart compress (JPEG) for chat sharing</label>
+        <div><label class="l">Quality <span id="cqv">80</span>%</label><input type="range" id="cq" min="40" max="95" value="80"></div>
+        <div class="flex gap-2"><button class="btn lav" id="cclear">Clear all</button></div>
+      </div>
+      <div id="cwm"></div>
+    </div>
+    <div class="card">
+      <div class="flex items-center justify-between mb-3 gap-2 flex-wrap"><h3 class="font-bold">Preview <span id="cinfo" class="text-sm" style="color:var(--mute)"></span></h3><button class="btn mint" id="cdl" disabled>Download collage</button></div>
+      <canvas id="ccv" width="10" height="10"></canvas>
+      <p id="cempty" class="text-center py-10" style="color:var(--mute)">Add a few images to start 🌸</p>
+    </div>
+  </section>
+
+  <!-- MEDIA -->
+  <section id="media" class="mt-4 grid lg:grid-cols-[320px_1fr] gap-4 hidden">
+    <div class="space-y-4">
+      <div class="card space-y-3">
+        <div class="drop" id="mdrop">Drop a photo or video (.mp4, .mov) or <button class="underline font-bold" id="mpick">choose file</button><input type="file" id="mfile" accept="image/*,video/mp4,video/quicktime,video/*" hidden></div>
+        <p class="text-xs" style="color:var(--mute)">Video is re-recorded in your browser in real time, so a 30s clip takes about 30s. Output is usually .webm (or .mp4 where supported).</p>
+      </div>
+      <div id="mwm"></div>
+    </div>
+    <div class="card">
+      <div class="flex items-center justify-between mb-3 gap-2 flex-wrap"><h3 class="font-bold">Preview</h3>
+        <div class="flex gap-2"><button class="btn lav hidden" id="mplay">Play / pause</button><button class="btn mint" id="mdl" disabled>Download</button></div></div>
+      <canvas id="mcv" width="10" height="10"></canvas>
+      <div id="mstat" class="text-sm mt-2" style="color:var(--mute)">Add a file to start 🌸</div>
+      <video id="mvid" playsinline muted class="hidden"></video>
+    </div>
+  </section>
+
+  <!-- CHAT -->
+  <section id="chat" class="mt-4 grid md:grid-cols-2 gap-4 hidden">
+    <div class="card space-y-3 self-start">
+      <label class="l">Your note (Indonesian or English)</label>
+      <textarea id="cin" rows="6" class="inp" placeholder="contoh: makasih ya kak, tolong kirim bukti transfernya sekarang"></textarea>
+      <div><label class="l">Tone (tap to mix)</label>
+        <div class="flex gap-2 flex-wrap" id="tones">
+          <button class="btn sel" data-m="stan">K-pop stan vibe</button>
+          <button class="btn lav" data-m="short">Short &amp; direct</button>
+          <button class="btn lav" data-m="sweet">Polite, sweet &amp; relaxed</button>
+        </div></div>
+      <div><label class="l">Quick slang presets</label><div class="flex gap-2 flex-wrap" id="presets"></div></div>
+      <button class="btn mint text-lg w-full" id="go">Transform &amp; Polish ✨</button>
+    </div>
+    <div class="space-y-4">
+      <div id="results" class="space-y-3"><p class="text-sm" style="color:var(--mute)">Type something or tap a preset 🌸</p></div>
+      <div class="card"><div class="flex justify-between items-center mb-1"><h3 class="font-bold">Recent results</h3><button class="text-sm underline" id="hclear" style="color:var(--mute)">Clear</button></div><div id="hist"></div></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+// ---------- tabs
+document.querySelectorAll('#tabs .tab').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#tabs .tab').forEach(x=>x.classList.toggle('on',x===b));
+  ['collage','media','chat'].forEach(id=>$('#'+id).classList.toggle('hidden',id!==b.dataset.t));
+});
+// ---------- watermark controls + drawing
+function makeWM(host,name,onchange){
+  const el=$('#wmtpl').content.cloneNode(true);
+  el.querySelectorAll('[name=TYPE]').forEach(r=>r.name=name);
+  host.appendChild(el);
+  const st={type:'none',text:'@bingbingvote',logo:null,pattern:'diagonal',opacity:35,size:8,color:'#ffffff',posx:50,posy:50,gap:100};
+  const upd=()=>{host.querySelectorAll('[data-o]').forEach(s=>s.textContent=st[s.dataset.o]+'%');onchange()};
+  host.querySelectorAll(`[name=${name}]`).forEach(r=>r.onchange=()=>{st.type=r.value;upd()});
+  host.querySelectorAll('[data-k]').forEach(i=>{
+    i.oninput=()=>{
+      const k=i.dataset.k;
+      if(k==='logo'){const f=i.files[0];if(!f)return;const im=new Image();im.onload=()=>{st.logo=im;upd()};im.src=URL.createObjectURL(f);return}
+      st[k]=['opacity','size','posx','posy','gap'].includes(k)?+i.value:i.value;upd();
+    };
+  });
+  upd();return st;
+}
+function drawWM(ctx,w,h,s){
+  if(s.type==='none')return;
+  if(s.type==='image'&&!s.logo)return;
+  if(s.type==='text'&&!s.text.trim())return;
+  const base=Math.min(w,h);
+  const unit=Math.max(10,base*s.size/100);
+  let iw,ih;
+  ctx.save();ctx.globalAlpha=s.opacity/100;
+  if(s.type==='text'){
+    ctx.font=`700 ${unit}px Quicksand,system-ui,sans-serif`;
+    iw=ctx.measureText(s.text).width;ih=unit*1.2;
+    ctx.fillStyle=s.color;ctx.textBaseline='middle';ctx.textAlign='center';
+    ctx.shadowColor='rgba(0,0,0,.35)';ctx.shadowBlur=unit/8;
+  }else{
+    iw=unit*3;ih=iw*s.logo.height/s.logo.width;
+  }
+  const put=(x,y,rot)=>{ctx.save();ctx.translate(x,y);ctx.rotate(rot||0);
+    if(s.type==='text')ctx.fillText(s.text,0,0);else ctx.drawImage(s.logo,-iw/2,-ih/2,iw,ih);ctx.restore()};
+  const sp=(s.gap||100)/100,gx=iw*1.5*sp,gy=ih*2.6*sp,px=s.posx/100,py=s.posy/100;
+  if(s.pattern==='center')put(w*px,h*py,0);
+  else if(s.pattern==='corner')put(w-iw/2-unit*.5,h-ih/2-unit*.5,0);
+  else if(s.pattern==='straight'){
+    const ox=(px-.5)*gx,oy=(py-.5)*gy;
+    for(let y=-gy+oy%gy;y<h+gy;y+=gy)for(let x=-gx+ox%gx;x<w+gx;x+=gx)put(x+gx/2,y+gy/2,0);
+  }else{
+    const ang=-Math.PI/6,d=Math.hypot(w,h);
+    ctx.translate(w/2,h/2);ctx.rotate(ang);ctx.translate(-w/2+(px-.5)*gx,-h/2+(py-.5)*gy);
+    let r=0;
+    for(let y=-d/2;y<h+d/2;y+=gy,r++)for(let x=-d/2+(r%2?gx/2:0);x<w+d/2;x+=gx)put(x,y,0);
+  }
+  ctx.restore();
+}
+// ---------- collage
+let imgs=[];
+const ccv=$('#ccv'),cctx=ccv.getContext('2d');
+const cwm=makeWM($('#cwm'),'ctype',()=>renderCollage());
+function renderCollage(){
+  $('#cempty').classList.toggle('hidden',imgs.length>0);
+  $('#cdl').disabled=!imgs.length;
+  if(!imgs.length){ccv.width=ccv.height=10;$('#cinfo').textContent='';return}
+  const cols=+$('#cols').value,gap=16,pad=16;
+  const cw=Math.floor(+$("#cmax").value/cols)-gap;
+  const rows=[];
+  for(let i=0;i<imgs.length;i+=cols)rows.push(imgs.slice(i,i+cols));
+  const rh=rows.map(r=>Math.max(...r.map(im=>Math.round(cw*im.height/im.width))));
+  const W=pad*2+cols*cw+(cols-1)*gap,H=pad*2+rh.reduce((a,b)=>a+b,0)+(rows.length-1)*gap;
+  ccv.width=W;ccv.height=H;
+  cctx.fillStyle='#FDFBF7';cctx.fillRect(0,0,W,H);
+  let y=pad;
+  rows.forEach((r,ri)=>{
+    r.forEach((im,ci)=>{
+      const x=pad+ci*(cw+gap),h=Math.round(cw*im.height/im.width);
+      cctx.drawImage(im,x,y,cw,h);
+    });
+    y+=rh[ri]+gap;
+  });
+  drawWM(cctx,W,H,cwm);
+  $('#cinfo').textContent=`(${imgs.length} images, ${W}×${H}px)`;
+}
+function addFiles(files){
+  [...files].filter(f=>f.type.startsWith('image/')).forEach(f=>{
+    const im=new Image();
+    im.onload=()=>{imgs.push(im);const t=new Image();t.src=im.src;$('#cthumbs').appendChild(t);renderCollage()};
+    im.src=URL.createObjectURL(f);
+  });
+}
+$('#cpick').onclick=()=>$('#cfiles').click();
+$('#cfiles').onchange=e=>{addFiles(e.target.files);e.target.value=''};
+$('#cols').oninput=e=>{$('#colv').textContent=e.target.value;renderCollage()};
+$('#cclear').onclick=()=>{imgs=[];$('#cthumbs').innerHTML='';renderCollage()};
+function dz(el,fn){
+  ['dragenter','dragover'].forEach(ev=>el.addEventListener(ev,e=>{e.preventDefault();el.classList.add('over')}));
+  ['dragleave','drop'].forEach(ev=>el.addEventListener(ev,e=>{e.preventDefault();el.classList.remove('over')}));
+  el.addEventListener('drop',e=>fn(e.dataTransfer.files));
+}
+dz($('#cdrop'),addFiles);
+function saveCanvas(cv,name,type,q,cb){
+  cv.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;
+    document.body.appendChild(a);a.click();a.remove();cb&&cb(b.size)},type||'image/png',q);
+}
+$('#cmax').onchange=renderCollage;
+$('#cq').oninput=e=>$('#cqv').textContent=e.target.value;
+$('#cdl').onclick=()=>{const c=$('#ccomp').checked;
+  saveCanvas(ccv,c?'proof-collage.jpg':'proof-collage.png',c?'image/jpeg':'image/png',$('#cq').value/100,
+    z=>{$('#cinfo').textContent='(saved '+(z/1048576).toFixed(2)+' MB)'})};
+// ---------- media
+const mcv=$('#mcv'),mctx=mcv.getContext('2d'),vid=$('#mvid');
+let mimg=null,mkind=null,raf=0,recording=false;
+const mwm=makeWM($('#mwm'),'mtype',()=>drawMedia());
+function drawMedia(){
+  const src=mkind==='video'?vid:mimg;
+  if(!src)return;
+  mctx.clearRect(0,0,mcv.width,mcv.height);
+  mctx.drawImage(src,0,0,mcv.width,mcv.height);
+  drawWM(mctx,mcv.width,mcv.height,mwm);
+}
+function loop(){drawMedia();raf=requestAnimationFrame(loop)}
+function loadMedia(files){
+  const f=files[0];if(!f)return;
+  cancelAnimationFrame(raf);vid.pause();
+  const url=URL.createObjectURL(f);
+  if(f.type.startsWith('image/')){
+    mkind='image';const im=new Image();
+    im.onload=()=>{mimg=im;mcv.width=im.naturalWidth;mcv.height=im.naturalHeight;drawMedia();
+      $('#mdl').disabled=false;$('#mplay').classList.add('hidden');$('#mstat').textContent='Ready to download.'};
+    im.src=url;
+  }else{
+    mkind='video';vid.src=url;vid.muted=true;
+    vid.onloadeddata=()=>{mcv.width=vid.videoWidth;mcv.height=vid.videoHeight;vid.currentTime=0.01;
+      setTimeout(()=>{drawMedia();loop()},150);
+      $('#mdl').disabled=false;$('#mplay').classList.remove('hidden');$('#mstat').textContent='Ready. Download re-records the whole clip with the watermark.'};
+    vid.onerror=()=>{$('#mstat').textContent='This browser can’t decode that video. Try an .mp4 (H.264), or convert the .mov first.'};
+  }
+}
+$('#mpick').onclick=()=>$('#mfile').click();
+$('#mfile').onchange=e=>{loadMedia(e.target.files);e.target.value=''};
+dz($('#mdrop'),loadMedia);
+$('#mplay').onclick=()=>{vid.muted=true;vid.paused?vid.play():vid.pause()};
+$('#mdl').onclick=()=>{
+  if(mkind==='image'){saveCanvas(mcv,'watermarked.png');return}
+  if(recording)return;
+  if(!window.MediaRecorder){$('#mstat').textContent='This browser can’t record video. Try Chrome or Edge on desktop.';return}
+  recording=true;$('#mdl').disabled=true;
+  const stream=mcv.captureStream(30);
+  try{vid.muted=false;vid.volume=0.001;const vs=(vid.captureStream||vid.mozCaptureStream).call(vid);
+    vs.getAudioTracks().forEach(t=>stream.addTrack(t))}catch(e){}
+  const types=['video/mp4;codecs=avc1','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
+  const mime=types.find(t=>MediaRecorder.isTypeSupported(t))||'';
+  const rec=new MediaRecorder(stream,mime?{mimeType:mime,videoBitsPerSecond:8e6}:{});
+  const chunks=[];rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
+  rec.onstop=()=>{
+    const ext=(rec.mimeType||'').includes('mp4')?'mp4':'webm';
+    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(chunks,{type:rec.mimeType||'video/webm'}));
+    a.download='watermarked.'+ext;document.body.appendChild(a);a.click();a.remove();
+    recording=false;$('#mdl').disabled=false;vid.muted=true;$('#mstat').textContent='Done. Saved as .'+ext;
+  };
+  vid.onended=()=>rec.state!=='inactive'&&rec.stop();
+  vid.currentTime=0;
+  vid.play().then(()=>{rec.start();$('#mstat').textContent='Recording… keep this tab open.'})
+    .catch(()=>{recording=false;$('#mdl').disabled=false;$('#mstat').textContent='Playback was blocked. Tap Play once, then try again.'});
+};
+// ---------- chat rewriter
+const DICT={
+'terima kasih banyak':'thank you so much','makasih banyak':'thank you so much','terima kasih':'thank you','makasih':'thanks','thank you banget':'thank you so much','trims':'thanks','thanks banget':'thanks so much',
+'slot ready':'slots are open','slot kosong':'slots are open','slot full':'slots are full','done ka':'done','done kak':'done','ready kak':'ready','ready ka':'ready','mau join':'wanna join','join yuk':'wanna join',
+'bukti transfer':'proof of payment','sudah transfer':'already paid','udah transfer':'already paid','sudah bayar':'already paid','udah bayar':'already paid','bayar':'pay','pembayaran':'payment','pesanannya':'your order','pesanan':'order','bukti':'proof',
+'sudah selesai':'done','udah selesai':'done','sedang diproses':'being processed','lagi proses':'in progress','sedang proses':'in progress','sudah dikirim':'already sent','udah dikirim':'already sent','santai aja':'no rush','sabar ya':'bear with me','ditunggu ya':'pls wait a bit','oke siap':'okay got it',
+'tolong':'please','mohon':'please','sekarang':'right now','nanti':'later','besok':'tomorrow','hari ini':'today','kemarin':'yesterday','sebentar':'a moment','bentar':'a sec','otw':'on my way','gapapa':"it's okay",'ga papa':"it's okay",'nggak papa':"it's okay",'siap':'got it','sip':'sounds good',
+'kirimin':'send','dikirim':'sent','kirim':'send','cek':'check','tungguin':'wait for','tunggu':'wait','mau':'want to','ingin':'would like to','bisa':'can','tidak bisa':"can't",'nggak bisa':"can't",'gak bisa':"can't",'tidak':"don't",'nggak':"don't",'gak':"don't",'belum':'not yet','sudah':'already','udah':'already',
+'iya':'yes','ya':'yeah','oke':'okay','maaf':'sorry','halo':'hi','hai':'hi','kakak':'you','kak':'','ka':'','banget':'so','sangat':'very','sekali':'really','aja':'just','dong':'','sih':'','nih':'','deh':'','kok':'','lho':'','loh':'','yuk':"let's",
+'dan':'and','atau':'or','tapi':'but','karena':'because','kalau':'if','jadi':'so','dengan':'with','untuk':'for','ke':'to','dari':'from','di':'at','ini':'this','itu':'that','aku':'i','saya':'i','kamu':'you','kita':'we','kami':'we','dia':'they',
+'selesai':'done','proses':'processing','lagi':'right now','semoga':'hope','suka':'like','senang':'happy','bantu':'help','membantu':'help','tanya':'ask','pertanyaan':'question','lihat':'see','ada':'there is','apa':'what','kapan':'when','berapa':'how much','harga':'price','gimana':'how','bagaimana':'how','minta':'ask for','balas':'reply','telat':'late','baru':'just'};
+const ABBR=[['rn','right now'],['btw','by the way'],['tbh','to be honest'],['imo','in my opinion'],['nvm','never mind'],['omg','oh my god'],['asap','as soon as possible'],['tysm','thank you so much'],['ty','thank you'],['thx','thanks'],['fr','for real'],['idk',"i don't know"],['pls','please'],['plz','please'],['cuz','because'],['u','you'],['ur','your'],['brb','be right back'],['jk','just kidding'],['ngl','not gonna lie'],['lmk','let me know'],['ig','i guess'],['alr','already'],['abt','about'],['sry','sorry'],['gonna','going to'],['wanna','want to'],['kinda','kind of'],['ok','okay'],['rlly','really']];
+const CONTR=[['i am',"i'm"],['it is',"it's"],['i will',"i'll"],['do not',"don't"],['cannot',"can't"],['can not',"can't"],['is not',"isn't"],['i have',"i've"],['that is',"that's"],['let us',"let's"],['you are',"you're"],['we are',"we're"],['does not',"doesn't"],['did not',"didn't"],['will not',"won't"]];
+const STAN=[['thank you so much','tysm'],['thanks so much','tysm'],['thank you','ty'],['thanks','thx'],['right now','rn'],['by the way','btw'],['to be honest','tbh'],['in my opinion','imo'],['never mind','nvm'],['oh my god','omg'],['as soon as possible','asap'],["i don't know",'idk'],['for real','fr'],['not gonna lie','ngl'],['let me know','lmk'],['be right back','brb'],['please','pls'],['because','cuz'],['about','abt'],['really','rlly'],['sorry','sry'],['you','u'],['your','ur'],['going to','gonna'],['want to','wanna'],['kind of','kinda'],['already','alr'],['okay','ok'],['a moment','a sec'],['hello','hi']];
+const FILL=['please','kindly','really','very','just','actually','basically','i think','hi','hello','hey','super','honestly'];
+const esc=x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+function rep(t,pairs){[...pairs].sort((x,y)=>y[0].length-x[0].length).forEach(([a,b])=>{
+  t=t.replace(new RegExp("(^|[^a-z0-9'’])"+esc(a)+"(?=$|[^a-z0-9'’])",'gi'),(m,p)=>p+b)});return t}
+const tidy=t=>t.replace(/\s+/g,' ').replace(/\s+([,.!?])/g,'$1').replace(/^[\s,.!]+/,'').trim();
+const H=t=>{let x=0;for(const c of t)x=(x*31+c.charCodeAt(0))>>>0;return x};
+const capS=t=>t.replace(/(^\s*|[.!?]\s+)([a-z])/g,(m,a,b)=>a+b.toUpperCase());
+const base=l=>rep(tidy(rep(l.toLowerCase(),Object.entries(DICT))),ABBR);
+function stan(t){
+  t=tidy(rep(rep(t,CONTR),STAN).toLowerCase()).replace(/[.]+(?=\s|$)/g,'').replace(/!+$/,'');
+  if(/\?$/.test(t))return t+' '+['✨','💜','🥺'][H(t)%3];
+  return t+['!! 💜','!! ✨',' hehe 💗',' 😭💜',' ✨'][H(t)%5];
+}
+function short(t){
+  const o=t;t=tidy(rep(rep(t,CONTR),[['thank you so much','thanks'],['thank you','thanks'],['i would like to','i want to'],['right now','now'],['as soon as possible','asap'],['by the way','btw'],['to be honest','tbh'],['a moment','a sec'],...FILL.map(f=>[f,''])]));
+  if(!t)t=o;t=capS(t.replace(/\bi\b/g,'I'));return /[.!?]$/.test(t)?t:t+'.';
+}
+function sweet(t,first,last,thanked){
+  t=capS(tidy(rep(t,CONTR)).replace(/\bi\b/g,'I')).replace(/[.]+$/,'');
+  t=t.replace(/^(hi!? )?(send|check|wait|confirm|tell|reply)\b/i,(m,a,v)=>'Please '+v.toLowerCase());
+  if(first&&!/^(hi|hello|hey)\b/i.test(t))t='Hi! '+t;
+  t+=/[?!]$/.test(t)?'':'!';
+  if(last&&!thanked)t+=['Thank you so much! 🌸','Thanks a lot, really appreciate it 💕','No rush at all, have a lovely day ✨'][H(t)%3].replace(/^/,' ');
+  return t;
+}
+function run(t,tone){
+  const L=t.split(/\n+/).filter(x=>x.trim()),th=/thank|thx|tysm|makasih|terima kasih|trims/i.test(t);
+  return L.map((l,i)=>{const b=base(l);return tone==='stan'?stan(b):tone==='short'?short(b):sweet(b,i===0,i===L.length-1,th)}).join('\n');
+}
+const TONES={stan:'K-pop stan vibe',short:'Short & direct',sweet:'Polite, sweet & relaxed'};
+const sel=new Set(['stan']);
+document.querySelectorAll('#tones button').forEach(b=>b.onclick=()=>{
+  const k=b.dataset.m;if(sel.has(k)){if(sel.size>1)sel.delete(k)}else sel.add(k);
+  document.querySelectorAll('#tones button').forEach(x=>x.className='btn '+(sel.has(x.dataset.m)?'sel':'lav'));
+});
+function copyBtn(get,label,cls){
+  const w=document.createElement('span');w.className='relative inline-block shrink-0';
+  const b=document.createElement('button');b.className=cls;b.textContent=label;
+  const t=document.createElement('span');t.className='tip';t.textContent='Copied! ✨';
+  b.onclick=async()=>{const v=get();
+    try{await navigator.clipboard.writeText(v)}catch(e){const ta=document.createElement('textarea');ta.value=v;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove()}
+    t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),1500)};
+  w.append(b,t);return w;
+}
+let hist=[];try{hist=JSON.parse(localStorage.getItem('ctk_hist')||'[]')}catch(e){}
+function pushHist(text){hist=[{text},...hist.filter(h=>h.text!==text)].slice(0,8);try{localStorage.setItem('ctk_hist',JSON.stringify(hist))}catch(e){}renderHist()}
+function renderHist(){
+  const box=$('#hist');box.innerHTML='';
+  if(!hist.length){box.innerHTML='<p class="text-sm" style="color:var(--mute)">Nothing yet.</p>';return}
+  hist.forEach(h=>{const r=document.createElement('div');r.className='flex items-center justify-between gap-2 py-2';r.style.borderBottom='1px solid var(--line)';
+    const p=document.createElement('p');p.className='text-sm truncate';p.title=h.text;p.textContent=h.text.replace(/\n/g,' / ');
+    r.append(p,copyBtn(()=>h.text,'Copy','btn lav text-sm'));box.appendChild(r)});
+}
+$('#hclear').onclick=()=>{hist=[];try{localStorage.removeItem('ctk_hist')}catch(e){}renderHist()};
+renderHist();
+$('#go').onclick=()=>{
+  const t=$('#cin').value.trim(),box=$('#results');box.innerHTML='';
+  if(!t){box.innerHTML='<p class="text-sm" style="color:var(--mute)">Type something or tap a preset 🌸</p>';return}
+  [...sel].forEach(k=>{
+    const out=run(t,k),d=document.createElement('div');d.className='card';
+    const h=document.createElement('div');h.className='text-sm font-bold mb-1';h.style.color='var(--mute)';h.textContent=TONES[k];
+    const p=document.createElement('p');p.className='whitespace-pre-wrap mb-3 text-lg';p.textContent=out;
+    d.append(h,p,copyBtn(()=>out,'Copy ✨','btn mint text-base'));box.appendChild(d);pushHist(out);
+  });
+};
+[['slot ready','slot ready kak, mau join?'],['done ka','done ka, bukti sudah dikirim ya'],['tysm','terima kasih banyak ya!'],['proof sent','bukti transfernya sudah dikirim'],['wait a sec','tunggu sebentar ya, lagi proses'],['sorry late','maaf ya baru balas, ditunggu ya']]
+.forEach(([l,t])=>{const b=document.createElement('button');b.className='btn peach text-sm';b.textContent=l;b.onclick=()=>{$('#cin').value=t;$('#go').click()};$('#presets').appendChild(b)});
+</script>
+</body>
+</html>
